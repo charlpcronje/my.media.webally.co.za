@@ -1,7 +1,7 @@
 import React from "react";
-import MediaList from "../media/MediaList";
-import { useMedia } from "../../context/MediaContext";
-import Loader from "../common/Loader";
+import MediaList from "../components/media/MediaList";
+import { useMedia } from "../context/MediaContext";
+import Loader from "../components/common/Loader";
 
 const Home = () => {
   const { media, loading, loadMedia } = useMedia();

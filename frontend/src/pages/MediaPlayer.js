@@ -1,8 +1,8 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { useMedia } from "../../context/MediaContext";
-import MediaPlayer from "../media/MediaPlayer";
-import Loader from "../common/Loader";
+import { useMedia } from "../context/MediaContext";
+import MediaPlayer from "../components/media/MediaPlayer";
+import Loader from "../components/common/Loader";
 
 const MediaPlayerPage = () => {
   const { id } = useParams();
