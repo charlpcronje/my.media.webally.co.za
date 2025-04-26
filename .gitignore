@@ -1,7 +1,6 @@
 # Node
 frontend/node_modules/
 frontend/.pnp*
-frontend/.env*
 frontend/build/
 
 # Logs
@@ -16,7 +15,6 @@ Thumbs.db
 
 # PHP
 backend/vendor/
-backend/.env*
 backend/uploads/
 backend/uploads/*
 !backend/uploads/.gitkeep
@@ -27,7 +25,7 @@ backend/uploads/*
 *.swp
 
 # Misc
-.env
+
 *.bak
 *.tmp
 
@@ -51,3 +49,4 @@ coverage/
 *.so
 *.exe
 *.dll
+.history
