@@ -1,0 +1,163 @@
+/* Dark Mode Styles */
+:root {
+    --dark-bg: #212529;
+    --dark-card-bg: #2c3034;
+    --dark-text: #e9ecef;
+    --dark-border: #495057;
+    --dark-input-bg: #343a40;
+    --dark-hover: #3d4246;
+    --dark-muted: #adb5bd;
+}
+
+body.dark-mode {
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
+}
+
+.dark-mode .sidebar {
+    background-color: var(--dark-card-bg) !important;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, .1);
+}
+
+.dark-mode .bg-light {
+    background-color: var(--dark-card-bg) !important;
+}
+
+.dark-mode .nav-link {
+    color: var(--dark-text);
+}
+
+.dark-mode .nav-link:hover,
+.dark-mode .nav-link:focus {
+    color: #fff;
+}
+
+.dark-mode .nav-link.active {
+    color: #0d6efd;
+}
+
+.dark-mode .card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+}
+
+.dark-mode .card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-color: var(--dark-border);
+}
+
+.dark-mode .table {
+    color: var(--dark-text);
+}
+
+.dark-mode .table-light th {
+    background-color: var(--dark-card-bg);
+    color: var(--dark-text);
+    border-color: var(--dark-border);
+}
+
+.dark-mode .table-hover tbody tr:hover {
+    background-color: var(--dark-hover);
+    color: var(--dark-text);
+}
+
+.dark-mode .table td {
+    border-color: var(--dark-border);
+}
+
+.dark-mode .form-control,
+.dark-mode .form-select {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-border);
+    color: var(--dark-text);
+}
+
+.dark-mode .input-group-text {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    color: var(--dark-text);
+}
+
+.dark-mode .text-muted {
+    color: var(--dark-muted) !important;
+}
+
+.dark-mode .media-type-icon {
+    background-color: var(--dark-card-bg);
+}
+
+.dark-mode .navbar {
+    background-color: var(--dark-card-bg) !important;
+}
+
+.dark-mode .border-bottom {
+    border-color: var(--dark-border) !important;
+}
+
+.dark-mode .btn-outline-secondary {
+    color: var(--dark-text);
+    border-color: var(--dark-border);
+}
+
+.dark-mode .btn-outline-secondary:hover {
+    background-color: var(--dark-hover);
+    color: var(--dark-text);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.dark-mode-toggle {
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    color: white;
+}
+
+.dark-mode-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode-toggle i {
+    font-size: 1.25rem;
+}
+
+/* Make sure the toggle and sign out link are aligned properly */
+.nav-item.d-flex {
+    align-items: center;
+}
+
+/* Progress bars in dark mode */
+.dark-mode .progress {
+    background-color: var(--dark-input-bg);
+}
+
+/* Badge styling in dark mode */
+.dark-mode .badge.bg-light {
+    background-color: var(--dark-input-bg) !important;
+    color: var(--dark-text) !important;
+}
+
+/* Modal styling in dark mode */
+.dark-mode .modal-content {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+}
+
+.dark-mode .modal-header,
+.dark-mode .modal-footer {
+    border-color: var(--dark-border);
+}
+
+.dark-mode .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
