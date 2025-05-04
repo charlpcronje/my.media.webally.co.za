@@ -10,12 +10,16 @@ RewriteBase /
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Handle clean URL endpoints
-RewriteRule ^preferences$ preferences.php [L,QSA]
-RewriteRule ^media$ media.php [L,QSA]
-RewriteRule ^tags$ tags.php [L,QSA]
-RewriteRule ^session$ session.php [L,QSA]
-RewriteRule ^track$ track.php [L,QSA]
+# Handle clean URL endpoints - with case insensitivity [NC]
+RewriteRule ^preferences$ preferences.php [NC,L,QSA]
+RewriteRule ^media$ media.php [NC,L,QSA]
+RewriteRule ^tags$ tags.php [NC,L,QSA]
+RewriteRule ^session$ session.php [NC,L,QSA]
+RewriteRule ^track$ track.php [NC,L,QSA]
+
+# Debug - log all requests to a file
+RewriteLog "/var/www/html/my.media.webally.co.za/logs/rewrite.log"
+RewriteLogLevel 9
 
 # Handle endpoints with parameters
 RewriteRule ^preferences/(.*)$ preferences.php?path=$1 [L,QSA]
