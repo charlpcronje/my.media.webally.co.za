@@ -99,14 +99,64 @@ function enableCors() {
     }
 }
 
-// Initialize error handling
+// Initialize error handling - MAXIMUM ERROR VISIBILITY
 ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', BASE_PATH . '/logs/php_errors.log');
+
+// Set error reporting to maximum level
+error_reporting(E_ALL);
+
+// Ensure errors are displayed in browser
+ini_set('html_errors', 1);
+
 // Auto-migrate files from old to new location when accessed
 define('AUTO_MIGRATE_FILES', true);
 
-error_reporting(E_ALL);
+// Create a custom error handler to ensure errors are always displayed
+function customErrorHandler($errno, $errstr, $errfile, $errline) {
+    $error_message = date('Y-m-d H:i:s') . " [$errno] $errstr in $errfile on line $errline\n";
+    error_log($error_message, 3, BASE_PATH . '/logs/php_errors.log');
+    
+    // Display error in browser if display_errors is enabled
+    if (ini_get('display_errors')) {
+        echo "<div style='background-color: #ffdddd; border: 1px solid #ff0000; padding: 10px; margin: 10px 0; font-family: monospace;'>";
+        echo "<strong>PHP Error:</strong> $errstr<br>";
+        echo "<strong>File:</strong> $errfile<br>";
+        echo "<strong>Line:</strong> $errline<br>";
+        echo "<strong>Type:</strong> " . errorTypeToString($errno) . "<br>";
+        echo "</div>";
+    }
+    
+    // Don't execute PHP's internal error handler
+    return true;
+}
+
+// Helper function to convert error number to readable string
+function errorTypeToString($errno) {
+    switch ($errno) {
+        case E_ERROR: return 'Fatal Error';
+        case E_WARNING: return 'Warning';
+        case E_PARSE: return 'Parse Error';
+        case E_NOTICE: return 'Notice';
+        case E_CORE_ERROR: return 'Core Error';
+        case E_CORE_WARNING: return 'Core Warning';
+        case E_COMPILE_ERROR: return 'Compile Error';
+        case E_COMPILE_WARNING: return 'Compile Warning';
+        case E_USER_ERROR: return 'User Error';
+        case E_USER_WARNING: return 'User Warning';
+        case E_USER_NOTICE: return 'User Notice';
+        case E_STRICT: return 'Strict Standards';
+        case E_RECOVERABLE_ERROR: return 'Recoverable Error';
+        case E_DEPRECATED: return 'Deprecated';
+        case E_USER_DEPRECATED: return 'User Deprecated';
+        default: return 'Unknown Error';
+    }
+}
+
+// Set the custom error handler
+set_error_handler('customErrorHandler');
 
 // Ensure upload directories exist
 ensureUploadDirectories();
