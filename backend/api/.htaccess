@@ -17,10 +17,6 @@ RewriteRule ^tags$ tags.php [NC,L,QSA]
 RewriteRule ^session$ session.php [NC,L,QSA]
 RewriteRule ^track$ track.php [NC,L,QSA]
 
-# Debug - log all requests to a file
-RewriteLog "/var/www/html/my.media.webally.co.za/logs/rewrite.log"
-RewriteLogLevel 9
-
 # Handle endpoints with parameters
 RewriteRule ^preferences/(.*)$ preferences.php?path=$1 [L,QSA]
 RewriteRule ^media/(.*)$ media.php?path=$1 [L,QSA]
