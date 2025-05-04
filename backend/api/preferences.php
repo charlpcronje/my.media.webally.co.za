@@ -19,7 +19,7 @@ require_once('../models/UserPreferencesRepository.php');
 enableCors();
 
 // Debug information
-echo "<!-- Debug: Preferences endpoint accessed -->";
+error_log("Preferences API: Script started.");
 
 // Get database connection
 $db = getDbConnection();
