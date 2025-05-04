@@ -1,93 +1,57 @@
-# Media Share PWA
+# Media Share Platform Documentation
 
-A simple Progressive Web App for sharing media files (videos, audio, and images) with analytics tracking.
+Welcome to the Media Share platform documentation. This comprehensive guide will help you understand the architecture, features, and usage of the Media Share application.
 
-## Features
+## Overview
 
-- Upload and share media files (MP4, MP3, JPG, PNG, GIF)
-- Tag-based organization
-- User identification via URL parameter
-- Media playback with tracking (views, play, pause, seek, etc.)
-- PWA support for offline access
-- Dark/Light mode toggle
-- Admin dashboard for managing content
+Media Share is a web-based platform for managing and sharing various types of media content (images, videos, and audio) with advanced features including chapter navigation, commenting, analytics tracking, and more.
 
-## Project Structure
+## Table of Contents
 
-```
-media-share/
-├── frontend/         # React frontend (Vite, TailwindCSS, ShadCN)
-└── backend/          # PHP API and admin dashboard
-    ├── api/          # PHP API endpoints
-    ├── admin/        # PHP admin dashboard
-    └── uploads/      # Media storage directory
-```
+1. [Installation](docs/installation.md)
+2. [Architecture](docs/architecture.md)
+3. [Features](docs/features.md)
+4. [API Reference](docs/api-reference.md)
+5. [Admin Guide](docs/admin-guide.md)
+6. [User Guide](docs/user-guide.md)
+7. [Analytics](docs/analytics.md)
+8. [Development Guide](docs/development-guide.md)
+9. [Troubleshooting](docs/troubleshooting.md)
 
-## Requirements
+## System Requirements
 
-### Frontend
-- Node.js v22
-- NPM
+- PHP 7.4 or higher
+- MySQL 5.7 or higher
+- Apache with mod_rewrite enabled
+- Node.js 14.x or higher (for frontend development)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
-### Backend
-- PHP 7.4+
-- MySQL
-- Apache
+## Quick Start
 
-## Setup Instructions
+1. Clone the repository
+2. Configure your web server to point to the project root
+3. Import the database schema from `backend/database_updates.sql`
+4. Configure database credentials in `backend/config.php`
+5. Navigate to the application URL in your browser
+6. Log in with default credentials (admin/admin123)
 
-### Backend Setup
+For detailed installation instructions, see the [Installation Guide](docs/installation.md).
 
-1. Make sure your Apache server is running and MySQL server is configured
-2. Place the `backend` folder in your document root
-3. Navigate to `http://your-server/backend/init_db.php` to initialize the database
-4. The default admin credentials will be created:
-   - Username: `admin`
-   - Password: `admin123`
-5. Access the admin dashboard at `http://your-server/backend/admin/`
+## Key Features
 
-### Frontend Setup
+- Multi-format media support (video, audio, images)
+- Chapter navigation for time-based media
+- Commenting system
+- Comprehensive analytics tracking
+- Advanced search functionality
+- User preferences system
+- Responsive design for all devices
+- Dark/light mode support
 
-1. Navigate to the frontend directory
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Configure the API URL in `vite.config.js` to point to your backend
-4. Start the development server:
-   ```
-   npm run dev
-   ```
-5. Build for production:
-   ```
-   npm run build
-   ```
-6. Deploy the built files from `dist` folder to your web server
+## License
 
-## Usage
+Media Share is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-### User Interface
+## Support
 
-- Access the application at `http://your-server/`
-- Add a user parameter to the URL: `http://your-server/?name=charl` or `http://your-server/?name=nade`
-- Browse, play, and interact with media
-
-### Admin Interface
-
-- Access the admin dashboard at `http://your-server/backend/admin/`
-- Upload and manage media files
-- View analytics data
-- Create and manage tags
-
-## API Endpoints
-
-- `GET /api/media.php` - Get all media or filter by type/tag
-- `POST /api/media.php` - Upload new media
-- `DELETE /api/media.php?id=X` - Delete media
-- `GET /api/tags.php` - Get all tags
-- `POST /api/tags.php` - Create new tag
-- `DELETE /api/tags.php?name=X` - Delete tag
-- `POST /api/track.php` - Track media events
-- `GET /api/session.php?name=X` - Start session
-- `GET /api/session.php` - Get session info
-- `POST /api/session.php?end` - End session
+For support requests, please open an issue on the GitHub repository or contact the development team.
