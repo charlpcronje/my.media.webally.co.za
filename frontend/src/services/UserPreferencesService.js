@@ -24,9 +24,7 @@ class UserPreferencesService {
   async getPreferences(userName) {
     try {
       // First try to get from API
-      const url = apiConfig.getUrl('userPreferences', { 
-        query: { user_name: userName } 
-      });
+      const url = apiConfig.getUrl('userPreferences');
       
       const response = await axios.get(url);
       
@@ -60,10 +58,8 @@ class UserPreferencesService {
       // Then try to save to API
       const url = apiConfig.getUrl('userPreferences');
       
-      const data = {
-        user_name: userName,
-        ...preferences
-      };
+      // Send only preferences, user_name comes from session
+      const data = { ...preferences }; 
       
       await axios.post(url, data);
       return true;
@@ -173,8 +169,8 @@ class UserPreferencesService {
       // Remove from local storage
       localStorage.removeItem(this.getStorageKey(userName));
       
-      // Clear from API
-      const url = apiConfig.getUrl('userPreferences') + '?user_name=' + encodeURIComponent(userName);
+      // Clear from API - URL doesn't need user_name anymore
+      const url = apiConfig.getUrl('userPreferences'); 
       await axios.delete(url);
       
       return true;

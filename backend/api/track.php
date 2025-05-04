@@ -4,6 +4,18 @@ require_once('../config.php');
 require_once('../models/AnalyticsRepository.php');
 enableCors();
 
+// Start the session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Get user name from session
+if (!isset($_SESSION['user_name'])) {
+    sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
+    exit;
+}
+$userName = $_SESSION['user_name'];
+
 // Get database connection
 $db = getDbConnection();
 if (!$db) {
@@ -29,10 +41,13 @@ if (!$data) {
 }
 
 // Validate required fields
-if (!isset($data['media_id']) || !isset($data['event_type']) || !isset($data['user_name'])) {
-    sendJsonResponse(['error' => 'Missing required fields'], 400);
+if (!isset($data['media_id']) || !isset($data['event_type'])) {
+    sendJsonResponse(['error' => 'Missing required fields (media_id, event_type)'], 400);
     exit;
 }
+
+// Add user_name from session to data for recordEvent
+$data['user_name'] = $userName;
 
 // Special handling for search events
 if ($data['event_type'] === 'search') {
@@ -47,7 +62,7 @@ if ($data['event_type'] === 'search') {
     $result = $analyticsRepo->trackSearch(
         $data['search_term'],
         $filters,
-        $data['user_name'],
+        $userName,
         $resultsCount
     );
     

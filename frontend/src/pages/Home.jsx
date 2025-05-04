@@ -9,6 +9,7 @@ import { useMediaStore } from '@/stores/mediaStore';
 import { useUserStore } from '@/stores/userStore';
 import { Search, X } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { apiConfig } from '@/lib/apiConfig';
 
 export function Home() {
   const { mediaItems, loading, error, fetchMedia } = useMediaStore();
@@ -41,7 +42,8 @@ export function Home() {
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const response = await fetch('/api/tags.php');
+        const url = apiConfig.getUrl('tags');
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to load tags: ${response.status}`);
         
         const data = await response.json();

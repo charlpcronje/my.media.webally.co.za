@@ -51,7 +51,6 @@ class MediaAnalyticsService {
     
     // Track initial view event
     this.trackEvent(mediaItem.id, 'view', {
-      user_name: userName,
       session_id: sessionId
     });
     
@@ -91,7 +90,6 @@ class MediaAnalyticsService {
     
     // Track progress event
     this.trackEvent(session.mediaId, 'progress', {
-      user_name: session.userName,
       session_id: sessionId,
       duration: Math.round(session.totalViewTime / 1000), // Convert to seconds
       percentage: session.options.getDurationPercentage ? 
@@ -127,7 +125,6 @@ class MediaAnalyticsService {
     
     // Track final event
     this.trackEvent(session.mediaId, 'ended', {
-      user_name: session.userName,
       session_id: sessionId,
       duration: Math.round(totalDuration / 1000), // Convert to seconds
       percentage: finalData.percentage || 
@@ -172,57 +169,41 @@ class MediaAnalyticsService {
   }
   
   /**
-   * Track a chapter navigation event
-   * @param {number} mediaId - ID of the media item
-   * @param {number} chapterId - ID of the chapter
-   * @param {string} userName - Username of the viewer
-   * @returns {Promise<Object>} Response data
+   * Track navigation between chapters
+   * @param {number} mediaId Media ID
+   * @param {string} chapterId Chapter ID
    */
-  async trackChapterNavigation(mediaId, chapterId, userName) {
+  async trackChapterNavigation(mediaId, chapterId) {
     return this.trackEvent(mediaId, 'chapter_navigation', {
-      user_name: userName,
-      chapter_id: chapterId,
-      action: 'navigated'
+      chapter_id: chapterId
     });
   }
   
   /**
-   * Track a media interaction (like, share, download)
-   * @param {number} mediaId - ID of the media item
-   * @param {string} interactionType - Type of interaction
-   * @param {string} userName - Username of the viewer
-   * @returns {Promise<Object>} Response data
+   * Track a user interaction (like, share, download)
+   * @param {number} mediaId Media ID
+   * @param {string} interactionType Type of interaction
    */
-  async trackInteraction(mediaId, interactionType, userName) {
-    return this.trackEvent(mediaId, interactionType, {
-      user_name: userName
-    });
+  async trackInteraction(mediaId, interactionType) {
+    return this.trackEvent(mediaId, interactionType, {});
   }
   
   /**
-   * Track image specific interactions
-   * @param {number} mediaId - ID of the image
-   * @param {string} action - Action performed (enlarge, click)
-   * @param {string} userName - Username of the viewer
-   * @returns {Promise<Object>} Response data
+   * Track image interactions (zoom, pan)
+   * @param {number} mediaId Media ID
+   * @param {string} action Type of action (zoom_in, zoom_out, pan)
    */
-  async trackImageInteraction(mediaId, action, userName) {
-    return this.trackEvent(mediaId, `image_${action}`, {
-      user_name: userName,
-      action
-    });
+  async trackImageInteraction(mediaId, action) {
+    return this.trackEvent(mediaId, `image_${action}`, {});
   }
   
   /**
-   * Track search event
-   * @param {string} searchTerm - The search term
-   * @param {Object} filters - Search filters applied
-   * @param {string} userName - Username of the searcher
-   * @returns {Promise<Object>} Response data
+   * Track a search event
+   * @param {string} searchTerm Search term
+   * @param {Object} filters Applied filters
    */
-  async trackSearch(searchTerm, filters, userName) {
+  async trackSearch(searchTerm, filters) {
     return this.trackEvent(0, 'search', {
-      user_name: userName,
       search_term: searchTerm,
       filters: JSON.stringify(filters)
     });

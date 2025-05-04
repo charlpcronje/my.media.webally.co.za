@@ -5,6 +5,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Start the session to access session variables
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Include the error display helper if it exists
 if (file_exists('./display_errors.php')) {
     require_once('./display_errors.php');
@@ -50,13 +55,12 @@ switch ($method) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handleGetRequest($prefRepo) {
-    // Get user name from query parameter
-    if (!isset($_GET['user_name'])) {
-        sendJsonResponse(['error' => 'User name is required'], 400);
+    // Get user name from PHP session
+    if (!isset($_SESSION['user_name'])) {
+        sendJsonResponse(['error' => 'User not logged in or session expired'], 401); // 401 Unauthorized
         return;
     }
-    
-    $userName = $_GET['user_name'];
+    $userName = $_SESSION['user_name'];
     
     // Get user preferences
     $preferences = $prefRepo->getByUserName($userName);
@@ -75,6 +79,13 @@ function handleGetRequest($prefRepo) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handlePostRequest($prefRepo) {
+    // Get user name from PHP session
+    if (!isset($_SESSION['user_name'])) {
+        sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
+        return;
+    }
+    $userName = $_SESSION['user_name'];
+
     // Get request data
     $jsonData = file_get_contents('php://input');
     $data = json_decode($jsonData, true);
@@ -84,13 +95,6 @@ function handlePostRequest($prefRepo) {
     }
     
     // Validate required fields
-    if (!isset($data['user_name'])) {
-        sendJsonResponse(['error' => 'User name is required'], 400);
-        return;
-    }
-    
-    $userName = $data['user_name'];
-    
     // Remove user_name from data to avoid duplication
     unset($data['user_name']);
     
@@ -112,13 +116,12 @@ function handlePostRequest($prefRepo) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handleDeleteRequest($prefRepo) {
-    // Get user name from query parameter
-    if (!isset($_GET['user_name'])) {
-        sendJsonResponse(['error' => 'User name is required'], 400);
+    // Get user name from PHP session
+    if (!isset($_SESSION['user_name'])) {
+        sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
         return;
     }
-    
-    $userName = $_GET['user_name'];
+    $userName = $_SESSION['user_name'];
     
     // Delete user preferences
     $success = $prefRepo->deletePreferences($userName);
