@@ -7,16 +7,8 @@ error_reporting(E_ALL);
 
 error_log("Preferences API: Script started.");
 
-// Include config FIRST to set session cookie parameters
-require_once('../config.php');
-
-// Start the session to access session variables
-if (session_status() === PHP_SESSION_NONE) {
-    error_log("Preferences API: Starting session.");
-    session_start();
-} else {
-    error_log("Preferences API: Session already active (Status: " . session_status() . ").");
-}
+// Include config for DB connection etc.
+require_once('../config.php'); 
 
 // Include the error display helper if it exists
 if (file_exists('./display_errors.php')) {
@@ -64,18 +56,14 @@ switch ($method) {
 function handleGetRequest($prefRepo) {
     error_log("Preferences API: handleGetRequest called.");
 
-    // Get user name from PHP session
-    if (!isset($_SESSION['user_name'])) {
-        error_log("Preferences API: User not logged in or session expired. Session data: " . print_r($_SESSION, true));
-        echo "DEBUG: handleGetRequest - Session user_name NOT SET. Session data: " . print_r($_SESSION, true);
-        exit();
-        sendJsonResponse(['error' => 'User not logged in or session expired'], 401); // 401 Unauthorized
+    // Get user name from query parameter
+    if (!isset($_GET['user_name']) || empty(trim($_GET['user_name']))) {
+        error_log("Preferences API: user_name query parameter is missing or empty.");
+        sendJsonResponse(['error' => 'user_name query parameter is required'], 400); // 400 Bad Request
         return;
     }
-    $userName = $_SESSION['user_name'];
-    error_log("Preferences API: Retrieved user '{$userName}' from session.");
-    echo "DEBUG: handleGetRequest - Session user_name IS SET. User: {$userName}. Session data: " . print_r($_SESSION, true);
-    exit();
+    $userName = trim($_GET['user_name']);
+    error_log("Preferences API: Received user_name '{$userName}' from query parameter.");
 
     // Get user preferences
     $preferences = $prefRepo->getByUserName($userName);
@@ -95,14 +83,15 @@ function handleGetRequest($prefRepo) {
  */
 function handlePostRequest($prefRepo) {
     error_log("Preferences API: handlePostRequest called.");
-    // Get user name from PHP session
-    if (!isset($_SESSION['user_name'])) {
-        error_log("Preferences API: User not logged in or session expired for POST. Session data: " . print_r($_SESSION, true));
-        sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
+
+    // Get user name from query parameter (assuming it's always passed)
+    if (!isset($_GET['user_name']) || empty(trim($_GET['user_name']))) {
+        error_log("Preferences API: user_name query parameter is missing or empty for POST.");
+        sendJsonResponse(['error' => 'user_name query parameter is required'], 400); // 400 Bad Request
         return;
     }
-    $userName = $_SESSION['user_name'];
-    error_log("Preferences API: Retrieved user '{$userName}' from session for POST.");
+    $userName = trim($_GET['user_name']);
+    error_log("Preferences API: Received user_name '{$userName}' from query parameter for POST.");
 
     // Get request data
     $jsonData = file_get_contents('php://input');
@@ -134,13 +123,15 @@ function handlePostRequest($prefRepo) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handleDeleteRequest($prefRepo) {
-    // Get user name from PHP session
-    if (!isset($_SESSION['user_name'])) {
-        sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
+    // Get user name from query parameter
+    if (!isset($_GET['user_name']) || empty(trim($_GET['user_name']))) {
+        error_log("Preferences API: user_name query parameter is missing or empty for DELETE.");
+        sendJsonResponse(['error' => 'user_name query parameter is required'], 400); // 400 Bad Request
         return;
     }
-    $userName = $_SESSION['user_name'];
-    
+    $userName = trim($_GET['user_name']);
+    error_log("Preferences API: Received user_name '{$userName}' from query parameter for DELETE.");
+
     // Delete user preferences
     $success = $prefRepo->deletePreferences($userName);
     

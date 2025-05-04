@@ -9,7 +9,14 @@ class ApiConfig {
   constructor() {
     // Base URL for API endpoints (using subdomain)
     this.baseUrl = 'https://api.media.webally.co.za';
-    
+
+    // Get username from URL parameter (?name=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    this.userName = urlParams.get('name');
+    if (!this.userName) {
+      logger.warn('ApiConfig: No "name" parameter found in URL. API requests may lack user context.');
+    }
+
     // API endpoints
     this.endpoints = {
       media: '/media',
@@ -63,7 +70,14 @@ class ApiConfig {
         url = `${url}?${queryString}`;
       }
     }
-    
+
+    // Append user_name query parameter if available
+    if (this.userName) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}user_name=${encodeURIComponent(this.userName)}`;
+    }
+
+    logger.debug(`Generated API URL: ${url}`);
     return url;
   }
   

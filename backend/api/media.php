@@ -28,22 +28,49 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        getMedia($conn);
+        // Pass the username from GET param to the function if needed
+        $userName = $_GET['user_name'] ?? null;
+        if (!$userName) {
+            error_log("Media API: user_name query parameter is missing for GET request.");
+            // Decide if anonymous access is allowed or return error
+            // sendJsonResponse(['error' => 'user_name query parameter is required'], 400);
+            // return;
+            // Assuming anonymous access might be okay for GET, pass null
+        }
+        getMedia($conn, $userName); // Assuming getMedia needs the username
         break;
     case 'POST':
-        createMedia($conn);
+        // POST likely needs user identification
+        $userName = $_GET['user_name'] ?? null;
+        if (!$userName) {
+            error_log("Media API: user_name query parameter is missing for POST request.");
+            sendJsonResponse(['error' => 'user_name query parameter is required'], 400);
+            return;
+        }
+        createMedia($conn, $userName);
         break;
     case 'DELETE':
-        deleteMedia($conn);
+        // DELETE likely needs user identification
+        $userName = $_GET['user_name'] ?? null;
+        if (!$userName) {
+            error_log("Media API: user_name query parameter is missing for DELETE request.");
+            sendJsonResponse(['error' => 'user_name query parameter is required'], 400);
+            return;
+        }
+        deleteMedia($conn, $userName);
         break;
     default:
         sendJsonResponse(['error' => 'Method not allowed'], 405);
+        break;
 }
 
 /**
- * Get media items with optional filtering
+ * Get media items
+ * @param PDO $conn Database connection
+ * @param ?string $userName The username from query param (can be null)
  */
-function getMedia($conn) {
+function getMedia($conn, $userName) {
+    error_log("Media API: getMedia called. User: " . ($userName ?? 'Anonymous'));
     try {
         $params = [];
         $where = [];
@@ -72,6 +99,12 @@ function getMedia($conn) {
         if (isset($_GET['tag'])) {
             $where[] = "t.name = ?";
             $params[] = $_GET['tag'];
+        }
+        
+        // Filter by user
+        if ($userName) {
+            $where[] = "m.user_name = ?";
+            $params[] = $userName;
         }
         
         // Add WHERE clause if needed
@@ -108,7 +141,7 @@ function getMedia($conn) {
 /**
  * Create new media item with upload handling
  */
-function createMedia($conn) {
+function createMedia($conn, $userName) {
     try {
         // Verify that we have file uploads and required fields
         if (!isset($_FILES['file']) || !isset($_POST['caption']) || !isset($_POST['type'])) {
@@ -188,9 +221,9 @@ function createMedia($conn) {
         $conn->beginTransaction();
         
         // Insert media record
-        $sql = "INSERT INTO media (filename, thumbnail, type, caption, description) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO media (filename, thumbnail, type, caption, description, user_name) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->execute([$filename, $thumbnail, $type, $caption, $description]);
+        $stmt->execute([$filename, $thumbnail, $type, $caption, $description, $userName]);
         
         $mediaId = $conn->lastInsertId();
         
@@ -244,7 +277,7 @@ function createMedia($conn) {
 /**
  * Delete media item
  */
-function deleteMedia($conn) {
+function deleteMedia($conn, $userName) {
     try {
         // Get ID from query parameter
         if (!isset($_GET['id'])) {
@@ -254,13 +287,13 @@ function deleteMedia($conn) {
         $mediaId = $_GET['id'];
         
         // Get media info before deletion
-        $sql = "SELECT filename, thumbnail FROM media WHERE id = ?";
+        $sql = "SELECT filename, thumbnail, user_name FROM media WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$mediaId]);
         $media = $stmt->fetch();
         
-        if (!$media) {
-            sendJsonResponse(['error' => 'Media not found'], 404);
+        if (!$media || $media['user_name'] !== $userName) {
+            sendJsonResponse(['error' => 'Media not found or not owned by user'], 404);
         }
         
         // Start transaction
