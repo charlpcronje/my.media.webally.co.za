@@ -7,6 +7,9 @@ error_reporting(E_ALL);
 
 error_log("Preferences API: Script started.");
 
+// Include config FIRST to set session cookie parameters
+require_once('../config.php');
+
 // Start the session to access session variables
 if (session_status() === PHP_SESSION_NONE) {
     error_log("Preferences API: Starting session.");
@@ -20,7 +23,6 @@ if (file_exists('./display_errors.php')) {
     require_once('./display_errors.php');
 }
 
-require_once('../config.php');
 require_once('../models/UserPreferencesRepository.php');
 enableCors();
 
@@ -61,11 +63,6 @@ switch ($method) {
  */
 function handleGetRequest($prefRepo) {
     error_log("Preferences API: handleGetRequest called.");
-    // Dump the session array for debugging
-    echo '<pre>Session Content: '; 
-    print_r($_SESSION);
-    echo '</pre>';
-    exit;
 
     // Get user name from PHP session
     if (!isset($_SESSION['user_name'])) {
