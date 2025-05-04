@@ -10,6 +10,15 @@ require_once __DIR__ . '/controllers/RatingController.php';
 require_once __DIR__ . '/controllers/AnalyticsController.php';
 require_once __DIR__ . '/controllers/AdminController.php';
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: https://my.media.webally.co.za');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-API-Key');
+    header('Access-Control-Allow-Credentials: true');
+    http_response_code(200);
+    exit();
+}
+
 // Routing logic for all API endpoints
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
