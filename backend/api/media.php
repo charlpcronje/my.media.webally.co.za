@@ -16,7 +16,7 @@ require_once('../config.php');
 enableCors();
 
 // Debug information
-echo "<!-- Debug: Media endpoint accessed -->";
+// Removed: echo "<!-- Debug: Media endpoint accessed -->";
 
 $conn = getDbConnection();
 if (!$conn) {
