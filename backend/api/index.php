@@ -3,6 +3,9 @@
 require_once('../config.php');
 enableCors();
 
+// Log incoming request
+error_log("API Router: Received request URI: " . $_SERVER['REQUEST_URI'] . " Method: " . $_SERVER['REQUEST_METHOD']);
+
 // Initialize response
 $response = [
     'success' => false,
@@ -49,6 +52,7 @@ if (!$db) {
 try {
     // First segment is the primary resource
     $resource = $pathSegments[0] ?? '';
+    error_log("API Router: Routing resource: {$resource}"); // Log the resource being routed
     
     // Route based on resource and HTTP method
     switch ($resource) {
@@ -201,6 +205,8 @@ try {
             break;
     }
 } catch (Exception $e) {
+    // Log the caught exception
+    error_log('API Router Exception: ' . $e->getMessage() . "\nStack Trace:\n" . $e->getTraceAsString());
     logError('API Router error: ' . $e->getMessage());
     $response = [
         'success' => false,

@@ -1,5 +1,7 @@
 <?php
 // backend/api/media.php
+error_log("Media API: Script started.");
+
 // Force error display for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

@@ -5,9 +5,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+error_log("Preferences API: Script started.");
+
 // Start the session to access session variables
 if (session_status() === PHP_SESSION_NONE) {
+    error_log("Preferences API: Starting session.");
     session_start();
+} else {
+    error_log("Preferences API: Session already active (Status: " . session_status() . ").");
 }
 
 // Include the error display helper if it exists
@@ -55,12 +60,15 @@ switch ($method) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handleGetRequest($prefRepo) {
+    error_log("Preferences API: handleGetRequest called.");
     // Get user name from PHP session
     if (!isset($_SESSION['user_name'])) {
+        error_log("Preferences API: User not logged in or session expired. Session data: " . print_r($_SESSION, true));
         sendJsonResponse(['error' => 'User not logged in or session expired'], 401); // 401 Unauthorized
         return;
     }
     $userName = $_SESSION['user_name'];
+    error_log("Preferences API: Retrieved user '{$userName}' from session.");
     
     // Get user preferences
     $preferences = $prefRepo->getByUserName($userName);
@@ -79,12 +87,15 @@ function handleGetRequest($prefRepo) {
  * @param UserPreferencesRepository $prefRepo
  */
 function handlePostRequest($prefRepo) {
+    error_log("Preferences API: handlePostRequest called.");
     // Get user name from PHP session
     if (!isset($_SESSION['user_name'])) {
+        error_log("Preferences API: User not logged in or session expired for POST. Session data: " . print_r($_SESSION, true));
         sendJsonResponse(['error' => 'User not logged in or session expired'], 401);
         return;
     }
     $userName = $_SESSION['user_name'];
+    error_log("Preferences API: Retrieved user '{$userName}' from session for POST.");
 
     // Get request data
     $jsonData = file_get_contents('php://input');
