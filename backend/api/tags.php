@@ -1,5 +1,12 @@
 <?php
 // backend/api/tags.php
+// Force error display for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Include the error display helper
+require_once('./display_errors.php');
 require_once('../config.php');
 enableCors();
 

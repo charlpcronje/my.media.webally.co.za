@@ -169,6 +169,29 @@ try {
             }
             break;
             
+        case 'preferences':
+            require_once('preferences.php');
+            require_once('../models/UserPreferencesRepository.php');
+            
+            // Initialize user preferences repository
+            $prefRepo = new UserPreferencesRepository($db);
+            
+            // Handle user preferences
+            if ($method === 'GET') {
+                handleGetRequest($prefRepo);
+                exit; // handleGetRequest will send the response
+            } elseif ($method === 'POST') {
+                handlePostRequest($prefRepo);
+                exit; // handlePostRequest will send the response
+            } elseif ($method === 'DELETE') {
+                handleDeleteRequest($prefRepo);
+                exit; // handleDeleteRequest will send the response
+            } else {
+                $response['message'] = 'Method not allowed for preferences';
+                $statusCode = 405;
+            }
+            break;
+            
         // Additional resources would be added here
             
         default:

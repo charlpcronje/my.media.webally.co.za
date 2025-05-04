@@ -1,8 +1,21 @@
 <?php
 // backend/api/preferences.php
+// Force error display for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Include the error display helper if it exists
+if (file_exists('./display_errors.php')) {
+    require_once('./display_errors.php');
+}
+
 require_once('../config.php');
 require_once('../models/UserPreferencesRepository.php');
 enableCors();
+
+// Debug information
+echo "<!-- Debug: Preferences endpoint accessed -->";
 
 // Get database connection
 $db = getDbConnection();
