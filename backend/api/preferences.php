@@ -64,12 +64,16 @@ function handleGetRequest($prefRepo) {
     // Get user name from PHP session
     if (!isset($_SESSION['user_name'])) {
         error_log("Preferences API: User not logged in or session expired. Session data: " . print_r($_SESSION, true));
+        echo "DEBUG: handleGetRequest - Session user_name NOT SET. Session data: " . print_r($_SESSION, true);
+        exit();
         sendJsonResponse(['error' => 'User not logged in or session expired'], 401); // 401 Unauthorized
         return;
     }
     $userName = $_SESSION['user_name'];
     error_log("Preferences API: Retrieved user '{$userName}' from session.");
-    
+    echo "DEBUG: handleGetRequest - Session user_name IS SET. User: {$userName}. Session data: " . print_r($_SESSION, true);
+    exit();
+
     // Get user preferences
     $preferences = $prefRepo->getByUserName($userName);
     
