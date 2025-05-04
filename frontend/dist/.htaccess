@@ -1,12 +1,22 @@
 # SPA Fallback for Vite/React Router
-# Redirect all requests to index.html except for existing files
+# Redirect all requests to index.html except for existing files and specific static assets
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+  
+  # Explicitly handle static files even if they don't exist in the dist folder
+  # This prevents them from being rewritten to index.html
+  RewriteRule ^(favicon\.ico|manifest\.json|robots\.txt|sitemap\.xml)$ - [L]
+  RewriteRule ^(assets|css|js|images|src)/(.*)$ - [L]
+  
   # Don't rewrite files or directories that exist
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
+  
+  # Don't rewrite API requests - pass them through
+  RewriteRule ^api/(.*)$ /api/$1 [L,QSA]
+  
   # Rewrite everything else to index.html
   RewriteRule ^ index.html [L]
 </IfModule>

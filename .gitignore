@@ -54,3 +54,4 @@ coverage/
 combine.json
 combined.md
 combined_output.md
+vhosts.conf
