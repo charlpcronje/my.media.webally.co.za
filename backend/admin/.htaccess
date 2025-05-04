@@ -1,4 +1,4 @@
-# backend/api/.htaccess - Simple API routing
+# backend/admin/.htaccess - Simple admin routing
 
 # Enable the rewrite engine
 RewriteEngine On
@@ -11,15 +11,14 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
 # Handle clean URL endpoints
-RewriteRule ^preferences$ preferences.php [L,QSA]
+RewriteRule ^users$ users.php [L,QSA]
+RewriteRule ^settings$ settings.php [L,QSA]
 RewriteRule ^media$ media.php [L,QSA]
-RewriteRule ^tags$ tags.php [L,QSA]
-RewriteRule ^session$ session.php [L,QSA]
-RewriteRule ^track$ track.php [L,QSA]
+RewriteRule ^dashboard$ dashboard.php [L,QSA]
 
 # Handle endpoints with parameters
-RewriteRule ^preferences/(.*)$ preferences.php?path=$1 [L,QSA]
-RewriteRule ^media/(.*)$ media.php?path=$1 [L,QSA]
+RewriteRule ^users/(.*)$ users.php?id=$1 [L,QSA]
+RewriteRule ^media/(.*)$ media.php?id=$1 [L,QSA]
 
 # All other requests go through the index.php router
 RewriteCond %{REQUEST_FILENAME} !-f
