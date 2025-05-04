@@ -1,0 +1,119 @@
+<?php
+// backend/api/preferences.php
+require_once('../config.php');
+require_once('../models/UserPreferencesRepository.php');
+enableCors();
+
+// Get database connection
+$db = getDbConnection();
+if (!$db) {
+    sendJsonResponse(['error' => 'Database connection failed'], 500);
+    exit;
+}
+
+// Initialize user preferences repository
+$prefRepo = new UserPreferencesRepository($db);
+
+// Handle request based on method
+$method = $_SERVER['REQUEST_METHOD'];
+
+switch ($method) {
+    case 'GET':
+        handleGetRequest($prefRepo);
+        break;
+    case 'POST':
+        handlePostRequest($prefRepo);
+        break;
+    case 'DELETE':
+        handleDeleteRequest($prefRepo);
+        break;
+    default:
+        sendJsonResponse(['error' => 'Method not allowed'], 405);
+        break;
+}
+
+/**
+ * Handle GET requests
+ * @param UserPreferencesRepository $prefRepo
+ */
+function handleGetRequest($prefRepo) {
+    // Get user name from query parameter
+    if (!isset($_GET['user_name'])) {
+        sendJsonResponse(['error' => 'User name is required'], 400);
+        return;
+    }
+    
+    $userName = $_GET['user_name'];
+    
+    // Get user preferences
+    $preferences = $prefRepo->getByUserName($userName);
+    
+    if (!$preferences) {
+        // Return default preferences if none found
+        sendJsonResponse($prefRepo->getDefaultPreferences());
+        return;
+    }
+    
+    sendJsonResponse($preferences);
+}
+
+/**
+ * Handle POST requests
+ * @param UserPreferencesRepository $prefRepo
+ */
+function handlePostRequest($prefRepo) {
+    // Get request data
+    $jsonData = file_get_contents('php://input');
+    $data = json_decode($jsonData, true);
+    
+    if (!$data) {
+        $data = $_POST;
+    }
+    
+    // Validate required fields
+    if (!isset($data['user_name'])) {
+        sendJsonResponse(['error' => 'User name is required'], 400);
+        return;
+    }
+    
+    $userName = $data['user_name'];
+    
+    // Remove user_name from data to avoid duplication
+    unset($data['user_name']);
+    
+    // Update or create user preferences
+    $success = $prefRepo->savePreferences($userName, $data);
+    
+    if (!$success) {
+        sendJsonResponse(['error' => 'Failed to save preferences'], 500);
+        return;
+    }
+    
+    // Get updated preferences
+    $preferences = $prefRepo->getByUserName($userName);
+    sendJsonResponse($preferences);
+}
+
+/**
+ * Handle DELETE requests
+ * @param UserPreferencesRepository $prefRepo
+ */
+function handleDeleteRequest($prefRepo) {
+    // Get user name from query parameter
+    if (!isset($_GET['user_name'])) {
+        sendJsonResponse(['error' => 'User name is required'], 400);
+        return;
+    }
+    
+    $userName = $_GET['user_name'];
+    
+    // Delete user preferences
+    $success = $prefRepo->deletePreferences($userName);
+    
+    if (!$success) {
+        sendJsonResponse(['error' => 'Failed to delete preferences'], 500);
+        return;
+    }
+    
+    sendJsonResponse(['success' => true, 'message' => 'Preferences deleted successfully']);
+}

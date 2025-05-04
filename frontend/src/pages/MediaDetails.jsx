@@ -5,31 +5,33 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useMediaStore } from '@/stores/mediaStore';
+import { useUserStore } from '@/stores/userStore';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Play, Pause, Volume2, VolumeX, DownloadIcon } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Volume2, VolumeX, DownloadIcon, Maximize } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { mediaAnalyticsService } from '@/services/MediaAnalyticsService';
+import { ChaptersComponent } from '@/components/ChaptersComponent';
+import { CommentsList } from '@/components/CommentsList';
+import { ImageViewer } from '@/components/ImageViewer';
+import { apiConfig } from '@/lib/apiConfig';
 
 export function MediaDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { 
-    selectedItem, 
-    loading, 
-    error, 
-    fetchMediaById, 
-    clearSelectedItem,
-    trackMediaEvent
-  } = useMediaStore();
+  const { selectedItem, loading, error, fetchMediaById, clearSelectedItem } = useMediaStore();
+  const { user } = useUserStore();
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState('chapters');
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
   
   const mediaRef = useRef(null);
-  const analyticsInterval = useRef(null);
+  const trackingSessionId = useRef(null);
   
   // Fetch media details
   useEffect(() => {
@@ -37,32 +39,49 @@ export function MediaDetails() {
     
     return () => {
       clearSelectedItem();
-      if (analyticsInterval.current) {
-        clearInterval(analyticsInterval.current);
+      
+      // End tracking session if active
+      if (trackingSessionId.current) {
+        mediaAnalyticsService.endTracking(trackingSessionId.current);
+        trackingSessionId.current = null;
       }
     };
   }, [id, fetchMediaById, clearSelectedItem]);
   
-  // Track view event when media loads
+  // Start tracking when media loads
   useEffect(() => {
-    if (selectedItem) {
-      trackMediaEvent(selectedItem.id, 'view');
+    if (selectedItem && user) {
+      // Start a tracking session
+      trackingSessionId.current = mediaAnalyticsService.startTracking(
+        selectedItem,
+        user,
+        {
+          getDurationPercentage: () => {
+            if (mediaRef.current && duration > 0) {
+              return (mediaRef.current.currentTime / duration) * 100;
+            }
+            return null;
+          }
+        }
+      );
     }
-  }, [selectedItem, trackMediaEvent]);
+  }, [selectedItem, user]);
   
   // Media player event handlers
   const handlePlayPause = () => {
     if (mediaRef.current) {
       if (isPlaying) {
         mediaRef.current.pause();
-        trackMediaEvent(selectedItem.id, 'pause', { 
+        mediaAnalyticsService.trackEvent(selectedItem.id, 'pause', { 
+          user_name: user,
           position: mediaRef.current.currentTime,
           percentage: (mediaRef.current.currentTime / mediaRef.current.duration) * 100
         });
       } else {
         mediaRef.current.play()
           .then(() => {
-            trackMediaEvent(selectedItem.id, 'play', { 
+            mediaAnalyticsService.trackEvent(selectedItem.id, 'play', { 
+              user_name: user,
               position: mediaRef.current.currentTime,
               percentage: (mediaRef.current.currentTime / mediaRef.current.duration) * 100
             });
@@ -106,7 +125,8 @@ export function MediaDetails() {
       setCurrentTime(seekTime);
       setProgress((seekTime / duration) * 100);
       
-      trackMediaEvent(selectedItem.id, 'seek', { 
+      mediaAnalyticsService.trackEvent(selectedItem.id, 'seek', { 
+        user_name: user,
         position: seekTime,
         percentage: (seekTime / duration) * 100
       });
@@ -115,14 +135,16 @@ export function MediaDetails() {
   
   const handleDownload = () => {
     if (selectedItem) {
+      const url = apiConfig.getUrl('mediaById', { id: selectedItem.id }) + '/download';
+      
       const link = document.createElement('a');
-      link.href = `/backend/uploads/${selectedItem.filename}`;
-      link.download = selectedItem.filename;
+      link.href = url;
+      link.download = selectedItem.filename || `media-${selectedItem.id}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      trackMediaEvent(selectedItem.id, 'download');
+      mediaAnalyticsService.trackInteraction(selectedItem.id, 'download', user);
       
       toast({
         title: 'Download started',
@@ -131,29 +153,39 @@ export function MediaDetails() {
     }
   };
   
-  // Setup media tracking
-  useEffect(() => {
-    if (selectedItem && selectedItem.type !== 'image' && isPlaying) {
-      // Track progress every 10 seconds
-      analyticsInterval.current = setInterval(() => {
-        if (mediaRef.current) {
-          trackMediaEvent(selectedItem.id, 'progress', {
-            position: mediaRef.current.currentTime,
-            percentage: (mediaRef.current.currentTime / mediaRef.current.duration) * 100
-          });
-        }
-      }, 10000);
-    } 
-    
-    return () => {
-      if (analyticsInterval.current) {
-        clearInterval(analyticsInterval.current);
+  // Handle chapter navigation
+  const handleChapterClick = (chapter) => {
+    if (mediaRef.current && selectedItem.type !== 'image') {
+      mediaRef.current.currentTime = chapter.start_time;
+      
+      if (!isPlaying) {
+        handlePlayPause();
       }
-    };
-  }, [selectedItem, isPlaying, trackMediaEvent]);
+    }
+  };
+  
+  // Handle image click for images
+  const handleImageClick = () => {
+    if (selectedItem && selectedItem.type === 'image') {
+      mediaAnalyticsService.trackImageInteraction(selectedItem.id, 'click', user);
+      toast({
+        title: selectedItem.caption,
+        description: selectedItem.description || 'No description available'
+      });
+    }
+  };
+  
+  // Open image viewer for image enlargement
+  const handleImageEnlarge = () => {
+    if (selectedItem && selectedItem.type === 'image') {
+      setImageViewerOpen(true);
+    }
+  };
   
   // Format time in MM:SS
   const formatTime = (seconds) => {
+    if (isNaN(seconds)) return '0:00';
+    
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -182,16 +214,20 @@ export function MediaDetails() {
   if (!selectedItem) return null;
   
   const renderMedia = () => {
-    const baseUrl = '/backend/uploads';
+    // Construct media URL using our API config
+    const mediaUrl = apiConfig.getUrl('mediaById', { id: selectedItem.id }) + '/stream';
+    const thumbnailUrl = selectedItem.thumbnail ? 
+      apiConfig.getUrl('mediaById', { id: selectedItem.id }) + '/thumbnail' : 
+      undefined;
     
     if (selectedItem.type === 'video') {
       return (
         <div className="media-player rounded-lg overflow-hidden bg-black">
           <video
             ref={mediaRef}
-            src={`${baseUrl}/${selectedItem.filename}`}
+            src={mediaUrl}
             className="w-full max-h-[70vh] object-contain"
-            poster={selectedItem.thumbnail ? `${baseUrl}/${selectedItem.thumbnail}` : undefined}
+            poster={thumbnailUrl}
             onClick={handlePlayPause}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -199,9 +235,11 @@ export function MediaDetails() {
             onTimeUpdate={handleTimeUpdate}
             onEnded={() => {
               setIsPlaying(false);
-              trackMediaEvent(selectedItem.id, 'ended', { 
+              mediaAnalyticsService.trackEvent(selectedItem.id, 'ended', { 
+                user_name: user,
                 percentage: 100,
-                position: duration
+                position: duration,
+                completed: true
               });
             }}
           ></video>
@@ -248,10 +286,10 @@ export function MediaDetails() {
     if (selectedItem.type === 'audio') {
       return (
         <div className="media-player rounded-lg overflow-hidden bg-card p-4 border">
-          {selectedItem.thumbnail && (
+          {thumbnailUrl && (
             <div className="mb-4 flex justify-center">
               <img 
-                src={`${baseUrl}/${selectedItem.thumbnail}`} 
+                src={thumbnailUrl} 
                 alt={selectedItem.caption} 
                 className="w-48 h-48 object-cover rounded-lg" 
               />
@@ -260,7 +298,7 @@ export function MediaDetails() {
           
           <audio
             ref={mediaRef}
-            src={`${baseUrl}/${selectedItem.filename}`}
+            src={mediaUrl}
             className="w-full"
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -268,9 +306,11 @@ export function MediaDetails() {
             onTimeUpdate={handleTimeUpdate}
             onEnded={() => {
               setIsPlaying(false);
-              trackMediaEvent(selectedItem.id, 'ended', { 
+              mediaAnalyticsService.trackEvent(selectedItem.id, 'ended', { 
+                user_name: user,
                 percentage: 100,
-                position: duration
+                position: duration,
+                completed: true
               });
             }}
           ></audio>
@@ -308,11 +348,28 @@ export function MediaDetails() {
     
     if (selectedItem.type === 'image') {
       return (
-        <div className="flex justify-center">
+        <div className="flex justify-center relative group">
           <img 
-            src={`${baseUrl}/${selectedItem.filename}`} 
+            src={mediaUrl} 
             alt={selectedItem.caption} 
-            className="max-h-[70vh] object-contain rounded-lg" 
+            className="max-h-[70vh] object-contain rounded-lg cursor-pointer" 
+            onClick={handleImageClick}
+          />
+          
+          <button
+            className="absolute top-2 right-2 bg-black/50 p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleImageEnlarge}
+            aria-label="Enlarge image"
+          >
+            <Maximize size={18} />
+          </button>
+          
+          {/* Image viewer modal */}
+          <ImageViewer 
+            image={mediaUrl}
+            isOpen={imageViewerOpen}
+            onClose={() => setImageViewerOpen(false)}
+            mediaId={selectedItem.id}
           />
         </div>
       );
@@ -355,6 +412,38 @@ export function MediaDetails() {
           <p className="text-muted-foreground whitespace-pre-line">
             {selectedItem.description}
           </p>
+          
+          {/* Tabs for chapters and comments */}
+          <div className="border-b">
+            <div className="flex space-x-2">
+              <button
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'chapters' ? 'border-primary text-primary' : 'border-transparent hover:text-primary/80'}`}
+                onClick={() => setActiveTab('chapters')}
+              >
+                Chapters
+              </button>
+              <button
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'comments' ? 'border-primary text-primary' : 'border-transparent hover:text-primary/80'}`}
+                onClick={() => setActiveTab('comments')}
+              >
+                Comments
+              </button>
+            </div>
+          </div>
+          
+          <div className="min-h-[200px]">
+            {activeTab === 'chapters' && (
+              <ChaptersComponent 
+                mediaId={selectedItem.id} 
+                currentTime={currentTime}
+                onChapterClick={handleChapterClick}
+              />
+            )}
+            
+            {activeTab === 'comments' && (
+              <CommentsList mediaId={selectedItem.id} />
+            )}
+          </div>
         </div>
         
         <div className="space-y-4">
@@ -372,7 +461,7 @@ export function MediaDetails() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Format:</span>
                 <span className="text-sm text-muted-foreground uppercase">
-                  {selectedItem.filename.split('.').pop()}
+                  {selectedItem.filename?.split('.').pop()}
                 </span>
               </div>
               

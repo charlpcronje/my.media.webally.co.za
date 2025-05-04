@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { logger } from '../lib/logger';
+import { apiConfig } from '../lib/apiConfig';
 
 export const useMediaStore = create((set, get) => ({
   mediaItems: [],
@@ -13,24 +14,19 @@ export const useMediaStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const queryParams = new URLSearchParams();
-      if (filters.type) queryParams.append('type', filters.type);
-      if (filters.tag) queryParams.append('tag', filters.tag);
+      // Use apiConfig to get the correct URL with query parameters
+      const url = apiConfig.getUrl('media', { query: filters });
       
-      const response = await fetch(`/api/media.php?${queryParams.toString()}`);
+      const response = await axios.get(url);
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      const mediaItems = Array.isArray(data) ? data : [];
+      // Ensure we always have an array of media items
+      const mediaItems = Array.isArray(response.data) ? response.data : [];
       
       set({ mediaItems, loading: false });
       return mediaItems;
     } catch (error) {
-      logger.error('Error fetching media:', error);
+      const errorData = apiConfig.handleApiError(error, 'fetchMedia');
+      logger.error('Error fetching media:', errorData);
       set({ error: 'Failed to load media', loading: false, mediaItems: [] });
       return [];
     }
@@ -39,23 +35,27 @@ export const useMediaStore = create((set, get) => ({
   fetchMediaById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const response = await fetch(`/api/media.php?id=${id}`);
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
+      // Use apiConfig to get the URL for a specific media item
+      const url = apiConfig.getUrl('mediaById', { id });
       
-      const data = await response.json();
+      const response = await axios.get(url);
+      const data = response.data;
       
       if (Array.isArray(data) && data.length > 0) {
         set({ selectedItem: data[0], loading: false });
         return data[0];
+      } else if (data && !Array.isArray(data)) {
+        // Handle case where API returns a single object instead of an array
+        set({ selectedItem: data, loading: false });
+        return data;
       } else {
         set({ error: 'Media not found', loading: false });
         return null;
       }
     } catch (error) {
-      logger.error('Error fetching media by id:', error);
+      const errorData = apiConfig.handleApiError(error, 'fetchMediaById');
+      logger.error('Error fetching media by id:', errorData);
       set({ error: 'Failed to load media details', loading: false });
       return null;
     }
@@ -65,6 +65,7 @@ export const useMediaStore = create((set, get) => ({
   
   trackMediaEvent: async (mediaId, event, details = {}) => {
     try {
+      // Get user from userStore (assume this is passed via get())
       const { user } = get();
       if (!user || !mediaId) return;
       
@@ -72,22 +73,45 @@ export const useMediaStore = create((set, get) => ({
         media_id: mediaId,
         event_type: event,
         user_name: user,
+        timestamp: new Date().toISOString(),
         ...details
       };
       
-      const response = await fetch('/api/track.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // Use apiConfig to get the URL for tracking events
+      const url = apiConfig.getUrl('track');
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
+      const response = await axios.post(url, payload);
+      return response.data;
     } catch (error) {
-      logger.error('Error tracking media event:', error);
+      const errorData = apiConfig.handleApiError(error, 'trackMediaEvent');
+      logger.error('Error tracking media event:', errorData);
+      return null;
+    }
+  },
+  
+  // New method for tracking view duration
+  trackViewDuration: async (mediaId, duration, percentage = null) => {
+    try {
+      return await get().trackMediaEvent(mediaId, 'view_duration', {
+        duration,
+        percentage,
+        view_end: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error tracking view duration:', error);
+      return null;
+    }
+  },
+  
+  // New method for reporting that user viewed an entire media item
+  trackCompletion: async (mediaId) => {
+    try {
+      return await get().trackMediaEvent(mediaId, 'completion', {
+        completed_at: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Error tracking completion:', error);
+      return null;
     }
   }
 }));

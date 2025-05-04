@@ -103,6 +103,9 @@ function enableCors() {
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 ini_set('error_log', BASE_PATH . '/logs/php_errors.log');
+// Auto-migrate files from old to new location when accessed
+define('AUTO_MIGRATE_FILES', true);
+
 error_reporting(E_ALL);
 
 // Ensure upload directories exist

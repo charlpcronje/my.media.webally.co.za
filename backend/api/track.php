@@ -1,59 +1,70 @@
-
 <?php
 // backend/api/track.php
 require_once('../config.php');
+require_once('../models/AnalyticsRepository.php');
 enableCors();
 
-$conn = getDbConnection();
-if (!$conn) {
+// Get database connection
+$db = getDbConnection();
+if (!$db) {
     sendJsonResponse(['error' => 'Database connection failed'], 500);
+    exit;
 }
 
-// Only accept POST requests
+// Initialize analytics repository
+$analyticsRepo = new AnalyticsRepository($db);
+
+// Only allow POST method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendJsonResponse(['error' => 'Method not allowed'], 405);
+    exit;
 }
 
-// Get request body
-$data = json_decode(file_get_contents('php://input'), true);
+// Get request data
+$jsonData = file_get_contents('php://input');
+$data = json_decode($jsonData, true);
+
+if (!$data) {
+    $data = $_POST;
+}
 
 // Validate required fields
 if (!isset($data['media_id']) || !isset($data['event_type']) || !isset($data['user_name'])) {
     sendJsonResponse(['error' => 'Missing required fields'], 400);
+    exit;
 }
 
-$mediaId = $data['media_id'];
-$eventType = $data['event_type'];
-$userName = $data['user_name'];
-$position = $data['position'] ?? null;
-$percentage = $data['percentage'] ?? null;
-
-// Validate event type
-$validEventTypes = ['view', 'play', 'pause', 'seek', 'progress', 'ended', 'download'];
-if (!in_array($eventType, $validEventTypes)) {
-    sendJsonResponse(['error' => 'Invalid event type'], 400);
-}
-
-try {
-    // Check if media exists
-    $sql = "SELECT id FROM media WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([$mediaId]);
-    
-    if ($stmt->rowCount() === 0) {
-        sendJsonResponse(['error' => 'Media not found'], 404);
+// Special handling for search events
+if ($data['event_type'] === 'search') {
+    if (!isset($data['search_term'])) {
+        sendJsonResponse(['error' => 'Search term is required for search events'], 400);
+        exit;
     }
     
-    // Insert analytics record
-    $sql = "INSERT INTO analytics (media_id, user_name, event_type, position, percentage) VALUES (?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([$mediaId, $userName, $eventType, $position, $percentage]);
+    $filters = isset($data['filters']) ? $data['filters'] : [];
+    $resultsCount = isset($data['results_count']) ? (int)$data['results_count'] : 0;
     
-    sendJsonResponse([
-        'success' => true,
-        'message' => 'Event tracked successfully'
-    ]);
-} catch (PDOException $e) {
-    logError('Error tracking media event: ' . $e->getMessage());
-    sendJsonResponse(['error' => 'Failed to track event'], 500);
+    $result = $analyticsRepo->trackSearch(
+        $data['search_term'],
+        $filters,
+        $data['user_name'],
+        $resultsCount
+    );
+    
+    if ($result === false) {
+        sendJsonResponse(['error' => 'Failed to track search'], 500);
+    } else {
+        sendJsonResponse(['success' => true, 'id' => $result]);
+    }
+    
+    exit;
+}
+
+// Record analytics event
+$result = $analyticsRepo->recordEvent($data);
+
+if ($result === false) {
+    sendJsonResponse(['error' => 'Failed to record event'], 500);
+} else {
+    sendJsonResponse(['success' => true, 'id' => $result]);
 }
