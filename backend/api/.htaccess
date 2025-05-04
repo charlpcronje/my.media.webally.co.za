@@ -9,7 +9,7 @@ RewriteBase /
 
 # Set proper CORS headers
 <IfModule mod_headers.c>
-    # Allow requests from both subdomains
+    # Allow requests from all subdomains
     SetEnvIf Origin "^https?://(my|admin)\.media\.webally\.co\.za$" CORS_ORIGIN=$0
     Header set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"

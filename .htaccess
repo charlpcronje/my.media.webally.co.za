@@ -5,10 +5,40 @@ RewriteEngine On
 RewriteCond %{REQUEST_METHOD} OPTIONS
 RewriteRule ^(.*)$ $1 [R=200,L]
 
+# Different routing based on hostname
+
+# For the main domain (my.media.webally.co.za)
 # Redirect API requests to the backend API
+RewriteCond %{HTTP_HOST} ^my\.media\.webally\.co\.za$ [NC]
 RewriteRule ^api/(.*)$ backend/api/$1 [L,QSA]
 
-# Redirect admin requests to the backend admin
+# For the main domain, ensure direct requests to API endpoints are properly routed
+RewriteCond %{HTTP_HOST} ^my\.media\.webally\.co\.za$ [NC]
+RewriteRule ^preferences$ backend/api/preferences.php [L,QSA]
+RewriteRule ^media$ backend/api/media.php [L,QSA]
+RewriteRule ^tags$ backend/api/tags.php [L,QSA]
+
+# For the API subdomain (api.media.webally.co.za) - DocumentRoot already points to backend/api
+# These rules will only apply on the API subdomain
+# Note: These rules are likely not needed since the vhost already points to backend/api
+# But included for completeness
+RewriteCond %{HTTP_HOST} ^api\.media\.webally\.co\.za$ [NC]
+RewriteRule ^preferences$ preferences.php [L,QSA]
+RewriteRule ^media$ media.php [L,QSA]
+RewriteRule ^tags$ tags.php [L,QSA]
+RewriteRule ^session$ session.php [L,QSA]
+RewriteRule ^track$ track.php [L,QSA]
+
+# For the admin subdomain (admin.media.webally.co.za) - DocumentRoot already points to backend/admin
+# These rules will only apply on the admin subdomain
+# Note: These rules are likely not needed since the vhost already points to backend/admin
+# But included for completeness
+RewriteCond %{HTTP_HOST} ^admin\.media\.webally\.co\.za$ [NC]
+RewriteRule ^users$ users.php [L,QSA]
+RewriteRule ^settings$ settings.php [L,QSA]
+
+# For the main domain, redirect admin requests to the backend admin
+RewriteCond %{HTTP_HOST} ^my\.media\.webally\.co\.za$ [NC]
 RewriteRule ^admin/(.*)$ backend/admin/$1 [L,QSA]
 
 # Allow CORS
@@ -18,7 +48,3 @@ RewriteRule ^admin/(.*)$ backend/admin/$1 [L,QSA]
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-API-Key"
     Header set Access-Control-Allow-Credentials "true"
 </IfModule>
-
-# Ensure that direct requests to specific API endpoints are properly routed
-RewriteRule ^preferences$ backend/api/preferences.php [L,QSA]
-RewriteRule ^media$ backend/api/media.php [L,QSA]
