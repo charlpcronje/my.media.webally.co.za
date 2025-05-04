@@ -61,6 +61,12 @@ switch ($method) {
  */
 function handleGetRequest($prefRepo) {
     error_log("Preferences API: handleGetRequest called.");
+    // Dump the session array for debugging
+    echo '<pre>Session Content: '; 
+    print_r($_SESSION);
+    echo '</pre>';
+    exit;
+
     // Get user name from PHP session
     if (!isset($_SESSION['user_name'])) {
         error_log("Preferences API: User not logged in or session expired. Session data: " . print_r($_SESSION, true));

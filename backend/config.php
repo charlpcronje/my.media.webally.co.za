@@ -1,5 +1,17 @@
 <?php
 // backend/config.php
+
+// --- Session Configuration for Cross-Subdomain --- 
+// Ensure cookies are accessible across *.media.webally.co.za
+ini_set('session.cookie_domain', '.media.webally.co.za'); // Note the leading dot
+ini_set('session.cookie_path', '/');                     // Accessible for all paths
+ini_set('session.cookie_httponly', '1');                 // Good security practice
+ini_set('session.cookie_secure', '1');                   // Only send over HTTPS
+ini_set('session.use_strict_mode', '1');                 // Prevents session fixation
+// Consider setting session.save_path if subdomains use different defaults
+// ini_set('session.save_path', '/path/to/shared/sessions'); 
+// --------------------------------------------------
+
 // Database connection parameters
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'my_media');
