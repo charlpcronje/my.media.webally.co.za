@@ -1,47 +1,147 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Layout from "./components/layout/Layout";
-import Home from "./pages/Home";
-import MediaPlayerPage from "./pages/MediaPlayer";
-import LoginPage from "./pages/Login";
-import DashboardPage from "./pages/admin/Dashboard";
-import MediaManagementPage from "./pages/admin/MediaManagement";
-import UserManagementPage from "./pages/admin/UserManagement";
-import AnalyticsPage from "./pages/admin/Analytics";
-import NotFound from "./components/common/NotFound";
-import { AuthProvider } from "./context/AuthContext";
-import { MediaProvider } from "./context/MediaContext";
-import { RatingProvider } from "./context/RatingContext";
-import { AnalyticsProvider } from "./context/AnalyticsContext";
-import { AdminProvider } from "./context/AdminContext";
+// frontend/src/App.jsx
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, useSearchParams, Navigate } from 'react-router-dom';
+import { Home } from './pages/Home';
+import { MediaDetails } from './pages/MediaDetails';
+import { Layout } from './components/Layout';
+import { ModeToggle } from './components/mode-toggle';
+import { Button } from './components/ui/button';
+import { useUserStore } from './stores/userStore';
+import { useToast } from './components/ui/use-toast';
+import { Toaster } from './components/ui/toaster';
+import { logger } from './lib/logger';
 
-function App() {
+// Login form component
+function LoginForm() {
+  const [inputName, setInputName] = useState('');
+  const [error, setError] = useState('');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const name = inputName.trim().toLowerCase();
+    
+    if (!name) {
+      setError('Please enter your name');
+      return;
+    }
+    
+    if (name !== 'charl' && name !== 'nade') {
+      setError('Only "charl" or "nade" are valid names');
+      return;
+    }
+    
+    window.location.href = `?name=${name}`;
+  };
+  
   return (
-    <AuthProvider>
-      <MediaProvider>
-        <RatingProvider>
-          <AnalyticsProvider>
-            <AdminProvider>
-              <Router>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/media/:id" element={<MediaPlayerPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/admin" element={<DashboardPage />} />
-                    <Route path="/admin/media" element={<MediaManagementPage />} />
-                    <Route path="/admin/users" element={<UserManagementPage />} />
-                    <Route path="/admin/analytics" element={<AnalyticsPage />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Layout>
-              </Router>
-            </AdminProvider>
-          </AnalyticsProvider>
-        </RatingProvider>
-      </MediaProvider>
-    </AuthProvider>
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
+        <div className="flex justify-end">
+          <ModeToggle />
+        </div>
+        <h1 className="text-2xl font-bold text-center">Media Share</h1>
+        <p className="text-center text-muted-foreground">Please enter your name:</p>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <input 
+              type="text" 
+              className="w-full px-3 py-2 border rounded-md border-input bg-background" 
+              placeholder="Just your name"
+              value={inputName}
+              onChange={(e) => setInputName(e.target.value)}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+          <Button type="submit" className="w-full py-2">
+            Submit
+          </Button>
+        </form>
+      </div>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  const { toast } = useToast();
+  const [params] = useSearchParams();
+  const [loading, setLoading] = useState(true);
+  const { user, setUser } = useUserStore();
+
+  // Get user from URL param
+  useEffect(() => {
+    // Prevent repeated API calls if we already have a user
+    if (user) {
+      setLoading(false);
+      return;
+    }
+    
+    const handleUserParam = async () => {
+      try {
+        const nameParam = params.get('name')?.toLowerCase();
+        
+        if (nameParam && (nameParam === 'charl' || nameParam === 'nade')) {
+          try {
+            // Only make one API call attempt
+            const response = await fetch(`/api/session.php?name=${nameParam}`);
+            if (!response.ok) throw new Error('Session creation failed');
+            
+            const data = await response.json();
+            if (data.success) {
+              setUser(nameParam);
+              toast({
+                title: 'Welcome back!',
+                description: `Logged in as ${nameParam}`,
+              });
+            }
+          } catch (error) {
+            // If API call fails, still set the user to avoid infinite loop
+            console.error('API call failed, but setting user anyway:', error);
+            setUser(nameParam);
+          }
+        }
+        setLoading(false);
+      } catch (error) {
+        logger.error('Session initialization error:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Session Error',
+          description: 'Failed to initialize user session',
+        });
+        setLoading(false);
+      }
+    };
+
+    handleUserParam();
+  }, [params, setUser, toast, user]);
+
+  // If still loading, show loading indicator
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no valid user in URL, prompt for user
+  if (!user) {
+    return <LoginForm />;
+  }
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="/media/:id" element={<MediaDetails />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+      <Toaster />
+    </>
+  );
+}

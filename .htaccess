@@ -1,0 +1,13 @@
+# Redirect API requests to the backend API
+RewriteEngine On
+RewriteRule ^api/(.*)$ backend/api/$1 [L]
+
+# Redirect admin requests to the backend admin
+RewriteRule ^admin/(.*)$ backend/admin/$1 [L]
+
+# Allow CORS
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>

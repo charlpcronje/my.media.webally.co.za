@@ -1,64 +1,101 @@
-# Media Manager PWA
+# Media Share PWA
 
-A full-stack Progressive Web App (PWA) for managing and streaming video and audio content, with analytics, user/admin roles, and modern UI/UX.
+A simple Progressive Web App for sharing media files (videos, audio, and images) with analytics tracking.
 
 ## Features
-- **User & Admin Authentication** (JWT-based)
-- **Media Upload & Streaming** (video/audio)
-- **User Ratings** (star-based, per media)
-- **Analytics Tracking** (playback, engagement)
-- **Admin Dashboard** (users, media, analytics)
-- **Responsive UI** (React, Tailwind CSS, ShadCN)
-- **PWA Support** (offline, installable)
 
-## Tech Stack
-- **Frontend:** React, React Router, Tailwind CSS, ShadCN, React Player
-- **Backend:** PHP (REST API), MySQL
-- **Storage:** AWS S3 (or local uploads)
-- **Auth:** JWT
-- **Deployment:** Docker, GitHub Actions, AWS/Vercel
+- Upload and share media files (MP4, MP3, JPG, PNG, GIF)
+- Tag-based organization
+- User identification via URL parameter
+- Media playback with tracking (views, play, pause, seek, etc.)
+- PWA support for offline access
+- Dark/Light mode toggle
+- Admin dashboard for managing content
 
-## Getting Started
+## Project Structure
 
-### Prerequisites
-- Node.js (v16+)
-- PHP (7.4+)
+```
+media-share/
+├── frontend/         # React frontend (Vite, TailwindCSS, ShadCN)
+└── backend/          # PHP API and admin dashboard
+    ├── api/          # PHP API endpoints
+    ├── admin/        # PHP admin dashboard
+    └── uploads/      # Media storage directory
+```
+
+## Requirements
+
+### Frontend
+- Node.js v22
+- NPM
+
+### Backend
+- PHP 7.4+
 - MySQL
+- Apache
+
+## Setup Instructions
 
 ### Backend Setup
-1. Copy `/backend/config/database.php.example` to `/backend/config/database.php` and set your DB credentials.
-2. Copy `/backend/config/app.php.example` to `/backend/config/app.php` and set your app/jwt/upload config.
-3. Import SQL files from `/backend/database/` into your MySQL DB (users, media, ratings, analytics).
-4. Start your PHP server in `/backend` (e.g. `php -S localhost:8000`).
+
+1. Make sure your Apache server is running and MySQL server is configured
+2. Place the `backend` folder in your document root
+3. Navigate to `http://your-server/backend/init_db.php` to initialize the database
+4. The default admin credentials will be created:
+   - Username: `admin`
+   - Password: `admin123`
+5. Access the admin dashboard at `http://your-server/backend/admin/`
 
 ### Frontend Setup
-1. In `/frontend`, run `npm install`.
-2. To start development: `npm start`.
-3. To build for production: `npm run build`.
 
-### PWA
-- The app is installable and supports offline mode via service worker.
+1. Navigate to the frontend directory
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Configure the API URL in `vite.config.js` to point to your backend
+4. Start the development server:
+   ```
+   npm run dev
+   ```
+5. Build for production:
+   ```
+   npm run build
+   ```
+6. Deploy the built files from `dist` folder to your web server
 
-### Deployment
-- See `/docs/tasks.md` for deployment and production configuration steps.
+## Usage
 
-## Folder Structure
-```
-media/
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── database/
-│   ├── models/
-│   ├── uploads/
-│   └── utils/
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   └── ...
-├── docs/
-└── .gitignore
-```
+### User Interface
+
+- Access the application at `http://your-server/`
+- Add a user parameter to the URL: `http://your-server/?name=charl` or `http://your-server/?name=nade`
+- Browse, play, and interact with media
+
+### Admin Interface
+
+- Access the admin dashboard at `http://your-server/backend/admin/`
+- Upload and manage media files
+- View analytics data
+- Create and manage tags
+
+## API Endpoints
+
+- `GET /api/media.php` - Get all media or filter by type/tag
+- `POST /api/media.php` - Upload new media
+- `DELETE /api/media.php?id=X` - Delete media
+- `GET /api/tags.php` - Get all tags
+- `POST /api/tags.php` - Create new tag
+- `DELETE /api/tags.php?name=X` - Delete tag
+- `POST /api/track.php` - Track media events
+- `GET /api/session.php?name=X` - Start session
+- `GET /api/session.php` - Get session info
+- `POST /api/session.php?end` - End session
 
 ## License
-MIT
+
+MIT License
+
+## Author
+
+Created by Claude AI Assistant
