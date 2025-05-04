@@ -2,8 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useUserStore } from "../stores/userStore";
 import { logger } from "../lib/logger";
-import { apiConfig } from "../lib/apiConfig";
-import axios from "axios";
+import { userPreferencesService } from "../services/UserPreferencesService";
 
 const ThemeProviderContext = createContext({
   theme: "system",
@@ -32,20 +31,27 @@ export function ThemeProvider({
           return;
         }
         
-        // If user is logged in, try to load preferences from server
+        // If user is logged in, try to load preferences using the service
         if (user) {
           try {
-            const url = apiConfig.getUrl('userPreferences', { user_name: user });
-            const response = await axios.get(url);
-            
-            if (response.data && response.data.theme) {
-              setTheme(response.data.theme);
-              localStorage.setItem(storageKey, response.data.theme);
+            const serverTheme = await userPreferencesService.getPreference(user, 'theme');
+            if (serverTheme) {
+              setTheme(serverTheme);
+              // Service already handles saving fetched pref to local storage if needed, 
+              // but explicit save here ensures consistency if service logic changes
+              localStorage.setItem(storageKey, serverTheme); 
+            } else {
+              // If no theme preference on server, stick with local/default
+              setTheme(localStorage.getItem(storageKey) || defaultTheme);
             }
           } catch (error) {
-            // If preferences don't exist yet, use default
-            logger.warn('Failed to load user preferences:', error);
+            // If preferences don't exist or fail to load, use local/default
+            logger.warn('Failed to load theme preference via service:', error);
+            setTheme(localStorage.getItem(storageKey) || defaultTheme);
           }
+        } else {
+           // No user, ensure we use local/default
+           setTheme(localStorage.getItem(storageKey) || defaultTheme);
         }
       } catch (error) {
         logger.error('Error in theme loading:', error);
@@ -75,20 +81,16 @@ export function ThemeProvider({
   // Save theme preference when it changes
   const saveTheme = async (newTheme) => {
     try {
-      // Save to local storage
+      // Save to local storage (still useful for immediate UI update)
       localStorage.setItem(storageKey, newTheme);
       setTheme(newTheme);
       
-      // If user is logged in, save to server
+      // If user is logged in, save using the service
       if (user) {
         try {
-          const url = apiConfig.getUrl('userPreferences');
-          await axios.post(url, {
-            user_name: user,
-            theme: newTheme
-          });
+          await userPreferencesService.setPreference(user, 'theme', newTheme);
         } catch (error) {
-          logger.warn('Failed to save theme preference to server:', error);
+          logger.warn('Failed to save theme preference to server via service:', error);
         }
       }
     } catch (error) {

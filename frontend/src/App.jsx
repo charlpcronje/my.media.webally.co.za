@@ -76,33 +76,25 @@ export default function App() {
       return;
     }
     
-    const handleUserParam = async () => {
+    const handleUserParam = async () => { 
       try {
         const nameParam = params.get('name')?.toLowerCase();
         
         if (nameParam && (nameParam === 'charl' || nameParam === 'nade')) {
-          try {
-            // Only make one API call attempt
-            const response = await fetch(`/api/session.php?name=${nameParam}`);
-            if (!response.ok) throw new Error('Session creation failed');
-            
-            const data = await response.json();
-            if (data.success) {
-              setUser(nameParam);
-              toast({
-                title: 'Welcome back!',
-                description: `Logged in as ${nameParam}`,
-              });
-            }
-          } catch (error) {
-            // If API call fails, still set the user to avoid infinite loop
-            console.error('API call failed, but setting user anyway:', error);
-            setUser(nameParam);
-          }
+          logger.info(`App.jsx: Setting user from URL parameter: ${nameParam}`);
+          setUser(nameParam);
+          toast({ 
+            title: 'Welcome!',
+            description: `Identified as ${nameParam}`,
+          });
+        } else if (params.get('name')) {
+            logger.warn(`App.jsx: Invalid 'name' parameter found: ${params.get('name')}. Prompting login.`);
+            // No need to set error, LoginForm will show
         }
+
         setLoading(false);
       } catch (error) {
-        logger.error('Session initialization error:', error);
+        logger.error('User initialization error from URL param:', error);
         toast({
           variant: 'destructive',
           title: 'Session Error',

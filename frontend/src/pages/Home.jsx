@@ -42,7 +42,8 @@ export function Home() {
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const url = apiConfig.getUrl('tags');
+        // Pass username to getUrl
+        const url = apiConfig.getUrl('tags', user);
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to load tags: ${response.status}`);
         
@@ -57,7 +58,7 @@ export function Home() {
     };
     
     loadTags();
-  }, []);
+  }, [user]);
   
   const filteredMedia = mediaItems.filter(item => {
     const matchesSearch = searchTerm.trim() === '' || 

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { logger } from '../lib/logger';
 import { apiConfig } from '../lib/apiConfig';
+import { useUserStore } from './userStore';
 
 export const useMediaStore = create((set, get) => ({
   mediaItems: [],
@@ -14,8 +15,11 @@ export const useMediaStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      // Use apiConfig to get the correct URL with query parameters
-      const url = apiConfig.getUrl('media', { query: filters });
+      // Get user from userStore
+      const user = useUserStore.getState().user;
+      
+      // Pass user as second arg, filters as third
+      const url = apiConfig.getUrl('media', user, filters);
       
       const response = await axios.get(url);
       
@@ -36,8 +40,11 @@ export const useMediaStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      // Use apiConfig to get the URL for a specific media item
-      const url = apiConfig.getUrl('mediaById', { id });
+      // Get user from userStore
+      const user = useUserStore.getState().user;
+      
+      // Pass user as second arg, {id} as third
+      const url = apiConfig.getUrl('mediaById', user, { id });
       
       const response = await axios.get(url);
       const data = response.data;

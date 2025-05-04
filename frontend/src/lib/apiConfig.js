@@ -10,13 +10,6 @@ class ApiConfig {
     // Base URL for API endpoints (using subdomain)
     this.baseUrl = 'https://api.media.webally.co.za';
 
-    // Get username from URL parameter (?name=...)
-    const urlParams = new URLSearchParams(window.location.search);
-    this.userName = urlParams.get('name');
-    if (!this.userName) {
-      logger.warn('ApiConfig: No "name" parameter found in URL. API requests may lack user context.');
-    }
-
     // API endpoints
     this.endpoints = {
       media: '/media',
@@ -39,48 +32,50 @@ class ApiConfig {
   /**
    * Get full URL for an endpoint
    * @param {string} endpoint - Endpoint key or path
-   * @param {Object} params - URL parameters
+   * @param {string} [userName] - Optional username to append as query parameter
+   * @param {Object} [queryParams] - Optional additional query parameters
    * @returns {string} Full URL
    */
-  getUrl(endpoint, params = {}) {
-    let url;
-    
-    // Check if endpoint is a function (for parameterized endpoints)
+  getUrl(endpoint, userName = null, queryParams = {}) {
+    let path;
+    let idParam = queryParams.id; // Extract id if present
+
+    // Check if endpoint is a function (for parameterized endpoints like /media/{id})
     if (typeof this.endpoints[endpoint] === 'function') {
-      url = `${this.baseUrl}${this.endpoints[endpoint](params.id)}`;
+      // Ensure idParam is passed correctly to endpoint functions
+      path = this.endpoints[endpoint](idParam);
+      // Remove id from queryParams since it's part of the path now
+      delete queryParams.id;
     } else if (this.endpoints[endpoint]) {
-      url = `${this.baseUrl}${this.endpoints[endpoint]}`;
+      path = this.endpoints[endpoint];
     } else {
-      // Handle custom endpoints
-      url = `${this.baseUrl}${endpoint}`;
-      logger.warn(`Using custom endpoint: ${endpoint}`);
-    }
-    
-    // Add query parameters if provided
-    if (params.query) {
-      const queryParams = new URLSearchParams();
-      Object.entries(params.query).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, value);
-        }
-      });
-      
-      const queryString = queryParams.toString();
-      if (queryString) {
-        url = `${url}?${queryString}`;
-      }
+      // Handle custom endpoints (treat endpoint as the path)
+      path = endpoint;
+      logger.warn(`Using custom endpoint path: ${path}`);
     }
 
-    // Append user_name query parameter if available
-    if (this.userName) {
-      const separator = url.includes('?') ? '&' : '?';
-      url = `${url}${separator}user_name=${encodeURIComponent(this.userName)}`;
+    let url = `${this.baseUrl}${path}`;
+
+    // Start building query string
+    const queryStringParams = { ...queryParams }; // Copy params
+
+    // Append user_name query parameter if provided
+    if (userName) {
+        queryStringParams['user_name'] = userName;
+    }
+
+    // Build query string from remaining params
+    const queryString = new URLSearchParams(queryStringParams).toString();
+
+    // Append query string if it's not empty
+    if (queryString) {
+        url = `${url}?${queryString}`;
     }
 
     logger.debug(`Generated API URL: ${url}`);
     return url;
   }
-  
+
   /**
    * Helper method to handle API errors
    * @param {Error} error - Error object 
